@@ -37,5 +37,5 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           # Quasar outputs SPA builds to dist/spa by default
           source: "frontend/dist/spa/*"
-          target: ${{ secrets.VPS_SSH_PORT }}
+          target: ${{ secrets.VPS_PATH }}
           strip_components: 3 # Removes 'frontend/dist/spa' from the target path

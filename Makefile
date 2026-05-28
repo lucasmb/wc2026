@@ -1,11 +1,9 @@
 .PHONY: all install run-backend run-frontend run-all sync-matches build-all
 ENV_DIR = .
-#ENV_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 # Load it (use absolute path to be safe)
 -include $(shell pwd)/$(ENV_DIR)/.env
 
 BINARY_NAME = wc2026-api
-PB_SERVICE_NAME=pocketbase.service
 
 all: run-all
 
