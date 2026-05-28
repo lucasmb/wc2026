@@ -3,7 +3,7 @@ name: Deploy SPA to VPS
 on:
   push:
     branches:
-      - main # Change to your production branch
+      - main
 
 jobs:
   build-and-deploy:
