@@ -38,13 +38,17 @@ export default defineConfig((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
+      env: {
+        VITE_BACKEND_URL: process.env.VITE_BACKEND_URL,
+        VITE_APP_NAME: process.env.VITE_APP_NAME || 'Prode',
+      },
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
 
       target: {
         browser: 'baseline-widely-available',
-        node: 'node22',
+        node: 'node24',
       },
 
       typescript: {
