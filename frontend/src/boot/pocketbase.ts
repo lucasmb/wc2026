@@ -3,7 +3,6 @@ import PocketBase from 'pocketbase';
 
 // Determine default backend connection endpoint dynamically
 const PB_URL = process.env.VITE_BACKEND_URL;
-console.log(process.env);
 const pb = new PocketBase(PB_URL);
 
 export default boot(({ app }) => {
