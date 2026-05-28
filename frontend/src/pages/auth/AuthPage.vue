@@ -140,6 +140,10 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from '@/stores/auth';
 
+console.log('PROCESS: ', process.env);
+console.log(process.env.VITE_APP_NAME);
+console.log(process.env.VITE_BACKEND_URL);
+
 const router = useRouter();
 const $q = useQuasar();
 const authStore = useAuthStore();
