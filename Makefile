@@ -1,4 +1,11 @@
 .PHONY: all install run-backend run-frontend run-all sync-matches build-all
+ENV_DIR = .
+#ENV_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+# Load it (use absolute path to be safe)
+-include $(shell pwd)/$(ENV_DIR)/.env
+
+BINARY_NAME = wc2026-api
+PB_SERVICE_NAME=pocketbase.service
 
 all: run-all
 
@@ -35,3 +42,23 @@ build-all:
 	cd backend && go build -o wc2026-backend main.go
 	@echo "Building Quasar frontend..."
 	pnpm --filter frontend build || pnpm -C frontend build
+
+build:
+	cd backend && GOOS=linux GOARCH=amd64 go build -o ./bin/$(BINARY_NAME) .
+
+.PHONY: restart-pb-remote
+restart-remote:
+	@echo $(ENV_DIR)
+	@echo "Restarting PocketBase service on $(REMOTE_HOST)..."
+	@ssh -t ""$$REMOTE_USER@$$REMOTE_HOST"" "sudo systemctl restart $$PB_SERVICE_NAME"
+	@echo "PocketBase service restart command sent to $(REMOTE_HOST)."
+
+
+.PHONY: upload
+upload:
+	@rsync -avz \
+		--chown=:www \
+		-e "ssh -p $(REMOTE_PORT)" \
+		backend/bin/$(BINARY_NAME) \
+		$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_PATH)
+	@ssh -p $(REMOTE_PORT) -t $(REMOTE_USER)@$(REMOTE_HOST) "sudo systemctl restart calometrics-api.service"
