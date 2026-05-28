@@ -1,10 +1,10 @@
 <template>
   <q-page class="q-pa-md">
     <div class="row items-center justify-between q-mb-lg">
-      <div class="text-h6 text-weight-bold text-primary">Prediction Groups</div>
+      <div class="text-h6 text-weight-bold text-primary">Grupos de Juego</div>
       <div class="q-gutter-x-sm">
         <q-btn
-          label="Join with Code"
+          label="Unirse con codigo"
           color="secondary"
           outline
           dense
@@ -12,7 +12,7 @@
           @click="showJoinDialog"
         />
         <q-btn
-          label="Create Group"
+          label="Crear Grupo"
           color="primary"
           unelevated
           dense
@@ -43,11 +43,11 @@
               {{ group.name }}
             </div>
             <div class="text-caption text-grey-6 q-mt-xs">
-              Owner: {{ group.expand?.owner?.username || 'System' }}
+              Creador: {{ group.expand?.owner?.username || 'System' }}
             </div>
           </q-card-section>
           <q-card-actions align="right">
-            <q-btn flat label="View Leaderboard" color="primary" dense />
+            <q-btn flat label="Ver Tabla" color="primary" dense />
           </q-card-actions>
         </q-card>
       </div>
