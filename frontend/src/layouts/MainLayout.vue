@@ -13,7 +13,7 @@
         <div
           class="q-px-md q-py-lg text-weight-bold text-primary text-h6 text-center border-bottom"
         >
-          MUNDIAL 2026
+          {{ appName }}
         </div>
         <q-list class="q-py-md">
           <q-item
@@ -46,7 +46,7 @@
           aria-label="Menu"
           @click="drawer = !drawer"
         />
-        <q-toolbar-title class="text-weight-bold">Prode Mundial 2026</q-toolbar-title>
+        <q-toolbar-title class="text-weight-bold">{{ appName }}</q-toolbar-title>
         <q-btn flat round icon="logout" @click="handleLogout" />
       </q-toolbar>
     </q-header>
@@ -92,9 +92,10 @@ const drawer = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
+const appName = process.env.VITE_APP_NAME;
 const navLinks = [
-  { to: '/app/matches', icon: 'sports_soccer', label: 'Matches' },
-  { to: '/app/groups', icon: 'group', label: 'Groups' },
+  { to: '/app/matches', icon: 'sports_soccer', label: 'Partidos' },
+  { to: '/app/groups', icon: 'group', label: 'Grupos' },
 ];
 
 function handleLogout() {

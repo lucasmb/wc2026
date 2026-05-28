@@ -27,6 +27,9 @@ jobs:
           cd frontend
           pnpm install --frozen-lockfile
           pnpm exec quasar build
+        env:
+          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
 
       - name: Copy files to VPS via SSH
         uses: appleboy/scp-action@v0.1.7
