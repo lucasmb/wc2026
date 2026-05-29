@@ -24,41 +24,44 @@
 
       <!-- Score Inputs -->
       <div class="col-4 text-center">
-        <div v-if="isLocked" class="row items-center justify-center q-gutter-x-sm">
+        <div v-if="isLocked" class="row items-center justify-center q-gutter-x-xs no-wrap">
           <span class="text-h5 text-weight-bold text-grey-7">{{ form.predicted_home }}</span>
           <span class="text-grey-5">:</span>
           <span class="text-h5 text-weight-bold text-grey-7">{{ form.predicted_away }}</span>
         </div>
-        <div v-else class="row items-center justify-center q-gutter-x-sm">
-          <q-input
-            v-model.number="form.predicted_home"
-            type="number"
-            min="0"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            outlined
-            dense
-            input-class="text-center text-weight-bold text-subtitle1"
-            style="width: 75px"
-            hide-bottom-space
-            @keydown="blockInvalidChars"
-            @update:model-value="emitFormChange"
-          />
-          <span class="text-grey-7 text-weight-bold">:</span>
-          <q-input
-            v-model.number="form.predicted_away"
-            type="number"
-            min="0"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            outlined
-            dense
-            input-class="text-center text-weight-bold text-subtitle1"
-            style="width: 75px"
-            hide-bottom-space
-            @keydown="blockInvalidChars"
-            @update:model-value="emitFormChange"
-          />
+        <div v-else class="row items-center justify-center q-gutter-y-xs q-gutter-x-none">
+          <!-- no-wrap prevents horizontal stack breaking under all mobile widths -->
+          <div class="row items-center justify-center no-wrap q-gutter-x-xs">
+            <q-input
+              v-model.number="form.predicted_home"
+              type="number"
+              min="0"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              outlined
+              dense
+              input-class="text-center text-weight-bold text-subtitle1 q-px-xs"
+              style="width: 65px"
+              hide-bottom-space
+              @keydown="blockInvalidChars"
+              @update:model-value="emitFormChange"
+            />
+            <span class="text-grey-7 text-weight-bold">:</span>
+            <q-input
+              v-model.number="form.predicted_away"
+              type="number"
+              min="0"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              outlined
+              dense
+              input-class="text-center text-weight-bold text-subtitle1 q-px-xs"
+              style="width: 65px"
+              hide-bottom-space
+              @keydown="blockInvalidChars"
+              @update:model-value="emitFormChange"
+            />
+          </div>
         </div>
       </div>
 
