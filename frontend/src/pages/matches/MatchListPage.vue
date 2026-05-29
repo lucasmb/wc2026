@@ -98,6 +98,7 @@
           Partido #{{ match.match_number }} • {{ formatLocalTime(match.kickoff) }} •
           {{ match.venue }}
         </div>
+        <!-- Child Form emitting score changes back to parent -->
         <PredictionForm
           v-if="activeGroupId"
           :match="match"
@@ -106,42 +107,42 @@
           @update="handlePredictionUpdate(match.id, $event)"
         />
       </div>
-    </div>
 
-    <!-- Unified Floating Action Footer Bar -->
-    <q-footer
-      v-if="myGroups.length > 0 && !loadingMatches && !loadingGroups && !loadingPredictions"
-      class="q-py-sm q-px-md shadow-up-3 border-top"
-      :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-white text-grey-7'"
-      style="bottom: 0px"
-    >
-      <div class="max-width-footer mx-auto row justify-between items-center">
-        <span
-          class="text-caption text-weight-medium"
-          :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'"
-        >
-          Modifica la prediccion del grupo y clickea guardar.
-        </span>
-        <div class="row q-gutter-x-sm">
-          <q-btn
-            flat
-            label="Next Group"
-            color="secondary"
-            icon-right="chevron_right"
-            :disabled="isLastGroup"
-            @click="nextGroup"
-          />
-          <q-btn
-            label="Save Group Predictions"
-            color="primary"
-            icon="save"
-            unelevated
-            :loading="savingAll"
-            @click="saveAllGroupPredictions"
-          />
+      <!-- Unified Action Block at the bottom of the scroll flow (Mobile-safe, non-overlapping) -->
+      <div
+        v-if="myGroups.length > 0"
+        class="col-12 q-py-md q-px-md border-top q-mt-lg rounded-borders shadow-1"
+        :class="$q.dark.isActive ? 'bg-grey-10 text-white border-grey-8' : 'bg-white text-grey-7'"
+      >
+        <div class="max-width-footer mx-auto row justify-between items-center q-col-gutter-sm">
+          <span
+            class="text-caption text-weight-medium col-12 col-sm-auto text-center text-sm-left"
+            :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'"
+          >
+            Modifica tus predicciones y guarda a continuación.
+          </span>
+          <div class="row q-gutter-x-sm col-12 col-sm-auto justify-center q-mt-sm q-mt-sm-none">
+            <q-btn
+              flat
+              label="Siguiente Grupo"
+              color="secondary"
+              icon-right="chevron_right"
+              :disabled="isLastGroup"
+              @click="nextGroup"
+            />
+            <q-btn
+              label="Guardar Grupo"
+              color="primary"
+              icon="save"
+              unelevated
+              :loading="savingAll"
+              :disabled="isSaveDisabled"
+              @click="saveAllGroupPredictions"
+            />
+          </div>
         </div>
       </div>
-    </q-footer>
+    </div>
   </q-page>
 </template>
 
@@ -216,6 +217,17 @@ const groupStages = [
 const isFirstGroup = computed(() => selectedGroupStage.value === 'A');
 const isLastGroup = computed(() => selectedGroupStage.value === 'final');
 
+// Automatically disables the group save action if all matches are locked or finished
+const isSaveDisabled = computed(() => {
+  if (filteredMatches.value.length === 0) return true;
+  return filteredMatches.value.every((m) => {
+    if (m.status === 'finished') return true;
+    if (!m.kickoff) return false;
+    // Standardize parsing for absolute browser engine compatibility
+    const isoString = m.kickoff.replace(' ', 'T');
+    return new Date(isoString).getTime() <= Date.now();
+  });
+});
 const filteredMatches = computed(() => {
   const selected = selectedGroupStage.value;
   // If a knockout stage is selected, match by the 'phase' attribute directly

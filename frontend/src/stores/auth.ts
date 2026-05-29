@@ -1,18 +1,22 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { pb } from '@/boot/pocketbase'; // Safe alias path
+import { ref } from 'vue';
+import { pb } from '@/boot/pocketbase';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(pb.authStore.record);
-  const isLoggedIn = computed(() => pb.authStore.isValid);
+  // Configure as a reactive ref to guarantee Vue-Router tracks it correctly
+  const isLoggedIn = ref(pb.authStore.isValid);
 
+  // Sync state changes from PocketBase's internal authStore
   pb.authStore.onChange((_token, model) => {
     user.value = model;
+    isLoggedIn.value = pb.authStore.isValid;
   });
 
   async function loginEmail(email: string, pass: string) {
     await pb.collection('users').authWithPassword(email, pass);
     user.value = pb.authStore.record;
+    isLoggedIn.value = pb.authStore.isValid; // Synchronously force updates
   }
 
   async function register(email: string, pass: string, name: string) {
@@ -29,11 +33,13 @@ export const useAuthStore = defineStore('auth', () => {
   async function loginGoogle() {
     await pb.collection('users').authWithOAuth2({ provider: 'google' });
     user.value = pb.authStore.record;
+    isLoggedIn.value = pb.authStore.isValid; // Synchronously force updates
   }
 
   function logout() {
     pb.authStore.clear();
     user.value = null;
+    isLoggedIn.value = false; // Synchronously clear state
   }
 
   return {

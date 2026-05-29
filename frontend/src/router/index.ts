@@ -22,12 +22,17 @@ export default route(function (/* { store, ssrContext } */) {
   });
 
   // Robust recursive matched navigation guard checking parent layouts
+  // Robust dual-directional navigation guard
   Router.beforeEach((to, _from, next) => {
     const authStore = useAuthStore();
     const isAuthRequired = to.matched.some((record) => record.meta.requiresAuth);
 
     if (isAuthRequired && !authStore.isLoggedIn) {
+      // 1. Unauthenticated trying to access secure area -> login
       next({ path: '/' });
+    } else if (!isAuthRequired && authStore.isLoggedIn) {
+      // 2. Authenticated trying to access login/register -> redirect forward to matches
+      next({ path: '/app/matches' });
     } else {
       next();
     }
