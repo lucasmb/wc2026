@@ -3,11 +3,11 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('@/pages/auth/AuthPage.vue'), // Unified View
+    component: () => import('@/pages/auth/AuthPage.vue'),
   },
   {
     path: '/register',
-    redirect: '/', // Simple redirect back to unified view
+    redirect: '/',
   },
   {
     path: '/app',
@@ -16,8 +16,10 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: '/app/matches' },
       { path: 'matches', component: () => import('@/pages/matches/MatchListPage.vue') },
+      { path: 'bracket', component: () => import('@/pages/bracket/BracketPage.vue') }, // New
       { path: 'groups', component: () => import('@/pages/groups/GroupsPage.vue') },
       { path: 'groups/:id', component: () => import('@/pages/groups/GroupDetailPage.vue') },
+      { path: 'profile', component: () => import('@/pages/profile/ProfilePage.vue') }, // New
     ],
   },
   {

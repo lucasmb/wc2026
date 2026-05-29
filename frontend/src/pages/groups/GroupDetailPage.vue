@@ -3,50 +3,124 @@
     <!-- Header Block -->
     <div v-if="group" class="row items-center justify-between q-mb-lg">
       <div>
-        <div class="text-h6 text-weight-bold text-primary">{{ group.name }}</div>
-        <div class="text-caption text-grey-6 q-mt-xs">
-          Invite Token:
-          <span class="text-weight-bold text-secondary text-subtitle2 q-ml-xs">
+        <div class="text-h5 text-weight-bold text-primary">{{ group.name }}</div>
+        <div class="text-caption text-grey-6 q-mt-xs row items-center q-gutter-x-sm">
+          <span>Código de Grupo:</span>
+          <span class="text-weight-bolder text-secondary text-subtitle2">
             {{ group.invite_code }}
           </span>
+          <q-btn
+            flat
+            dense
+            size="sm"
+            color="primary"
+            icon="share"
+            label="Invitar amigos"
+            class="q-ml-sm"
+            @click="copyInviteLink"
+          />
         </div>
       </div>
-      <q-btn flat icon="arrow_back" label="Back to Groups" color="grey-7" to="/app/groups" />
+      <q-btn flat icon="arrow_back" label="Volver a Grupos" color="grey-7" to="/app/groups" />
     </div>
 
-    <!-- Leaderboard Standings Loader -->
+    <!-- Leaderboard Loader -->
     <div v-if="loading" class="row justify-center q-my-xl">
       <q-spinner-dots color="primary" size="40px" />
     </div>
 
-    <div v-else class="row q-col-gutter-md">
+    <div v-else class="row q-col-gutter-md justify-center">
       <!-- Leaderboard Column -->
-      <div class="col-12">
-        <q-card flat bordered class="rounded-borders bg-white">
+      <div class="col-12 col-md-8">
+        <q-card
+          flat
+          bordered
+          :dark="$q.dark.isActive"
+          :class="$q.dark.isActive ? 'bg-grey-10 border-grey-8' : 'bg-white'"
+          class="rounded-borders shadow-1"
+        >
           <q-card-section class="q-pb-none">
-            <div class="text-subtitle1 text-weight-bold text-primary">Standings Leaderboard</div>
+            <div class="text-h6 text-weight-bold text-primary text-center">
+              🏆 Standings Leaderboard
+            </div>
           </q-card-section>
 
-          <q-card-section>
+          <q-card-section class="q-pt-md">
             <q-list separator>
-              <q-item v-for="user in leaderboard" :key="user.userId" class="q-py-md">
+              <q-item
+                v-for="user in leaderboard"
+                :key="user.userId"
+                class="q-py-md q-my-sm rounded-borders list-row-animation"
+                :class="getRankingClass(user.rank)"
+              >
+                <!-- Rank Medal Icon / Badge Slot -->
                 <q-item-section avatar class="row items-center justify-center">
-                  <span class="text-subtitle1 text-weight-bold q-mr-sm text-grey-8">
-                    #{{ user.rank }}
-                  </span>
-                  <q-avatar size="36px" color="blue-1" text-color="primary">
-                    {{ user.username.charAt(0).toUpperCase() }}
-                  </q-avatar>
+                  <div class="row items-center q-gutter-x-sm">
+                    <q-icon
+                      v-if="user.rank <= 3"
+                      name="emoji_events"
+                      size="28px"
+                      :color="getMedalColor(user.rank)"
+                    />
+                    <span
+                      class="text-subtitle1 text-weight-bolder"
+                      :class="
+                        user.rank <= 3
+                          ? 'text-black'
+                          : $q.dark.isActive
+                            ? 'text-grey-4'
+                            : 'text-grey-8'
+                      "
+                    >
+                      #{{ user.rank }}
+                    </span>
+                  </div>
                 </q-item-section>
 
+                <!-- Username and Avatar -->
                 <q-item-section>
-                  <q-item-label class="text-weight-bold text-grey-9">
-                    {{ user.username }}
-                  </q-item-label>
+                  <div class="row items-center q-gutter-x-md">
+                    <q-avatar
+                      size="40px"
+                      :color="user.rank <= 3 ? 'white' : 'primary'"
+                      :text-color="user.rank <= 3 ? 'black' : 'white'"
+                      class="shadow-1"
+                    >
+                      {{ user.username.charAt(0).toUpperCase() }}
+                    </q-avatar>
+                    <div>
+                      <q-item-label
+                        class="text-subtitle2 text-weight-bold"
+                        :class="
+                          user.rank <= 3
+                            ? 'text-black'
+                            : $q.dark.isActive
+                              ? 'text-white'
+                              : 'text-grey-9'
+                        "
+                      >
+                        {{ user.username }}
+                      </q-item-label>
+                      <q-item-label
+                        caption
+                        v-if="user.rank === 1"
+                        class="text-weight-bold"
+                        :class="user.rank <= 3 ? 'text-amber-10' : 'text-grey-6'"
+                      >
+                        Leader
+                      </q-item-label>
+                    </div>
+                  </div>
                 </q-item-section>
 
+                <!-- Points Highlight Badge -->
                 <q-item-section side>
-                  <q-chip dense color="primary" text-color="white" class="text-weight-bold q-px-md">
+                  <q-chip
+                    dense
+                    :color="user.rank <= 3 ? 'black' : 'primary'"
+                    :text-color="user.rank <= 3 ? 'white' : 'white'"
+                    class="text-weight-bolder text-subtitle2 q-px-md shadow-2"
+                  >
                     {{ user.totalPoints }} Pts
                   </q-chip>
                 </q-item-section>
@@ -62,8 +136,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { pb, PB_URL } from 'src/boot/pocketbase';
-import type { PredictionGroup, LeaderboardUser } from 'src/types';
+import { pb, PB_URL } from '@/boot/pocketbase';
+import { Notify, copyToClipboard } from 'quasar'; // Import copyToClipboard
+import type { PredictionGroup, LeaderboardUser } from '@/types';
 
 const route = useRoute();
 const groupId = route.params.id as string;
@@ -72,18 +147,30 @@ const group = ref<PredictionGroup | null>(null);
 const leaderboard = ref<LeaderboardUser[]>([]);
 const loading = ref(true);
 
+async function copyInviteLink() {
+  const inviteUrl = `${window.location.origin}/#/?invite=${groupId}`;
+  try {
+    await copyToClipboard(inviteUrl);
+    Notify.create({
+      type: 'positive',
+      message: '¡Enlace de invitación copiado al portapapeles!',
+    });
+  } catch (err: unknown) {
+    console.error('Failed copying invite link:', err);
+  }
+}
+
 async function fetchGroupDetails() {
   try {
     const rawGroup = await pb.collection('prediction_groups_id').getOne(groupId);
     group.value = rawGroup as unknown as PredictionGroup;
   } catch (err: unknown) {
-    console.error('Failed fetching group detail metrics:', err);
+    console.error('Failed fetching group details:', err);
   }
 }
 
 async function fetchLeaderboard() {
   try {
-    // Call the custom backend endpoint registered in Step 3
     const response = await fetch(`${PB_URL}/api/wc/leaderboard/${groupId}`, {
       headers: {
         Authorization: `Bearer ${pb.authStore.token}`,
@@ -99,8 +186,53 @@ async function fetchLeaderboard() {
   }
 }
 
+// Visual stylings based on ranking placements (Podium layout)
+function getRankingClass(rank: number): string {
+  switch (rank) {
+    case 1:
+      return 'bg-amber-4 shadow-1'; // Gold
+    case 2:
+      return 'bg-blue-grey-2 shadow-1'; // Silver
+    case 3:
+      return 'bg-orange-3 shadow-1'; // Bronze
+    default:
+      return 'bg-transparent';
+  }
+}
+
+function getMedalColor(rank: number): string {
+  switch (rank) {
+    case 1:
+      return 'warning';
+    case 2:
+      return 'grey-6';
+    case 3:
+      return 'orange-9';
+    default:
+      return 'grey-7';
+  }
+}
+
 onMounted(async () => {
   await fetchGroupDetails();
   await fetchLeaderboard();
 });
 </script>
+
+<style scoped>
+.rounded-borders {
+  border-radius: 12px;
+}
+.border-grey-8 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.list-row-animation {
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+}
+.list-row-animation:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+</style>

@@ -13,12 +13,16 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
           "
         />
-        <div class="text-subtitle2 text-weight-bold text-grey-9 q-mt-xs text-ellipsis">
+        <!-- Dynamic Contrast Text Color in Dark Mode -->
+        <div
+          class="text-subtitle2 text-weight-bold q-mt-xs text-ellipsis"
+          :class="$q.dark.isActive ? 'text-white' : 'text-grey-9'"
+        >
           {{ match.expand?.home_team?.name }}
         </div>
       </div>
 
-      <!-- Score Inputs (or locking placeholders) -->
+      <!-- Score Inputs -->
       <div class="col-4 text-center">
         <div v-if="isLocked" class="row items-center justify-center q-gutter-x-sm">
           <span class="text-h5 text-weight-bold text-grey-7">{{ form.predicted_home }}</span>
@@ -30,22 +34,30 @@
             v-model.number="form.predicted_home"
             type="number"
             min="0"
+            inputmode="numeric"
+            pattern="[0-9]*"
             outlined
             dense
-            input-class="text-center text-weight-bold text-subtitle1 no-spin"
-            style="width: 60px"
+            input-class="text-center text-weight-bold text-subtitle1"
+            style="width: 75px"
             hide-bottom-space
+            @keydown="blockInvalidChars"
+            @update:model-value="emitFormChange"
           />
           <span class="text-grey-7 text-weight-bold">:</span>
           <q-input
             v-model.number="form.predicted_away"
             type="number"
             min="0"
+            inputmode="numeric"
+            pattern="[0-9]*"
             outlined
             dense
-            input-class="text-center text-weight-bold text-subtitle1 no-spin"
-            style="width: 60px"
+            input-class="text-center text-weight-bold text-subtitle1"
+            style="width: 75px"
             hide-bottom-space
+            @keydown="blockInvalidChars"
+            @update:model-value="emitFormChange"
           />
         </div>
       </div>
@@ -62,7 +74,11 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
           "
         />
-        <div class="text-subtitle2 text-weight-bold text-grey-9 q-mt-xs text-ellipsis">
+        <!-- Dynamic Contrast Text Color in Dark Mode -->
+        <div
+          class="text-subtitle2 text-weight-bold q-mt-xs text-ellipsis"
+          :class="$q.dark.isActive ? 'text-white' : 'text-grey-9'"
+        >
           {{ match.expand?.away_team?.name }}
         </div>
       </div>
@@ -70,6 +86,7 @@
 
     <q-separator class="q-my-md" />
 
+    <!-- Details footer row inside match card -->
     <div class="row items-center justify-between">
       <div>
         <q-chip v-if="isLocked" dense color="grey-3" text-color="grey-8" icon="lock">
@@ -77,38 +94,24 @@
         </q-chip>
         <q-chip v-else dense color="green-1" text-color="green-8" icon="schedule"> Open </q-chip>
 
-        <!-- Display Points Awarded if match has finished -->
+        <!-- High-contrast dynamic points awarded chip -->
         <q-chip
-          v-if="match.status === 'finished' && predictionId"
+          v-if="match.status === 'finished'"
           dense
-          color="blue-1"
-          text-color="blue-8"
+          :color="pointsAwarded > 0 ? 'amber-5' : 'grey-7'"
+          :text-color="pointsAwarded > 0 ? 'black' : 'white'"
           icon="emoji_events"
-          class="text-weight-bold"
+          class="text-weight-bold q-px-sm"
         >
-          +{{ pointsAwarded }} Pts
+          {{ pointsAwarded }} Pts
         </q-chip>
       </div>
-
-      <q-btn
-        v-if="!isLocked"
-        label="Save"
-        color="primary"
-        dense
-        unelevated
-        class="q-px-md"
-        :loading="saving"
-        @click="savePrediction"
-      />
     </div>
   </q-card>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Notify } from 'quasar';
-import { pb } from '@/boot/pocketbase';
-import { useAuthStore } from '@/stores/auth';
 import type { Match, Prediction } from '@/types';
 
 const props = defineProps<{
@@ -118,11 +121,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'saved', prediction: Prediction): void;
+  (e: 'update', value: { predicted_home: number; predicted_away: number }): void;
 }>();
 
-const authStore = useAuthStore();
-const saving = ref(false);
 const predictionId = ref<string | null>(null);
 const pointsAwarded = ref(0);
 
@@ -138,7 +139,18 @@ const isLocked = computed(() => {
   return new Date(isoString).getTime() <= Date.now();
 });
 
-// Reactively bind incoming batched properties directly from prop watchers
+// Intercept keys to strictly allow digits only and prevent exponential expressions
+function blockInvalidChars(event: KeyboardEvent) {
+  const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'];
+  if (allowedKeys.includes(event.key)) {
+    return;
+  }
+  if (!/^[0-9]$/.test(event.key)) {
+    event.preventDefault();
+  }
+}
+
+// Reactively load and assign incoming predictions directly from parent cache
 watch(
   () => props.prediction,
   (newPred) => {
@@ -153,48 +165,16 @@ watch(
       form.value.predicted_away = 0;
       pointsAwarded.value = 0;
     }
+    emitFormChange();
   },
   { immediate: true },
 );
 
-async function savePrediction() {
-  if (isLocked.value || !authStore.user?.id || !props.groupId) return;
-  saving.value = true;
-  try {
-    const data = {
-      user: authStore.user.id,
-      match: props.match.id,
-      prediction_group: props.groupId,
-      predicted_home: Math.max(0, form.value.predicted_home),
-      predicted_away: Math.max(0, form.value.predicted_away),
-    };
-
-    let resultRecord: Prediction;
-
-    if (predictionId.value) {
-      const updated = await pb.collection('predictions_id').update(predictionId.value, data);
-      resultRecord = updated as unknown as Prediction;
-    } else {
-      const created = await pb.collection('predictions_id').create(data);
-      resultRecord = created as unknown as Prediction;
-    }
-
-    // Emit the saved result upward to update the parent’s central batch map cache
-    emit('saved', resultRecord);
-
-    Notify.create({
-      type: 'positive',
-      message: 'Prediction saved successfully!',
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Check your internet connection';
-    Notify.create({
-      type: 'negative',
-      message: `Failed saving prediction: ${message}`,
-    });
-  } finally {
-    saving.value = false;
-  }
+function emitFormChange() {
+  emit('update', {
+    predicted_home: form.value.predicted_home,
+    predicted_away: form.value.predicted_away,
+  });
 }
 </script>
 
@@ -203,15 +183,5 @@ async function savePrediction() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-:deep(input::-webkit-outer-spin-button),
-:deep(input::-webkit-inner-spin-button) {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-:deep(input[type='number']) {
-  -moz-appearance: textfield;
 }
 </style>

@@ -1,1 +1,72 @@
 // app global css
+// Custom Application CSS
+
+// Standard Global Styles
+body {
+  background-color: #f5f7fa;
+  color: #112347;
+}
+
+// --- DYNAMIC DARK MODE OVERRIDES (ARGENTINA 2026 AWAY JERSEY) ---
+.body--dark {
+  background-color: $away-black !important;
+  color: $away-white !important;
+
+  // Header and Layout styling overrides
+  .q-layout {
+    background-color: $away-black !important;
+  }
+
+  .q-header {
+    background-color: $away-black !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: $away-white !important;
+  }
+
+  .q-footer {
+    background-color: $away-card !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .q-drawer {
+    background-color: $away-card !important;
+    color: $away-white !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  // Card Overrides
+  .q-card {
+    background-color: $away-card !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: $away-white !important;
+  }
+
+  .text-primary {
+    color: $away-blue !important;
+  }
+
+  .text-secondary {
+    color: $away-gold !important;
+  }
+
+  // Buttons, badges, and active state overrides
+  .bg-primary {
+    background-color: $away-blue !important;
+  }
+
+  .bg-secondary {
+    background-color: $away-gold !important;
+  }
+
+  .text-grey-6, .text-grey-7, .text-grey-8 {
+    color: #a0aec0 !important;
+  }
+
+  .q-tab--active {
+    color: $away-blue !important;
+  }
+
+  .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
