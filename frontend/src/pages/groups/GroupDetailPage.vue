@@ -40,9 +40,7 @@
           class="rounded-borders shadow-1"
         >
           <q-card-section class="q-pb-none">
-            <div class="text-h6 text-weight-bold text-primary text-center">
-              🏆 Standings Leaderboard
-            </div>
+            <div class="text-h6 text-weight-bold text-primary text-center">🏆 Leaderboard</div>
           </q-card-section>
 
           <q-card-section class="q-pt-md">
@@ -107,7 +105,7 @@
                         class="text-weight-bold"
                         :class="user.rank <= 3 ? 'text-amber-10' : 'text-grey-6'"
                       >
-                        Leader
+                        Lider
                       </q-item-label>
                     </div>
                   </div>
@@ -148,7 +146,8 @@ const leaderboard = ref<LeaderboardUser[]>([]);
 const loading = ref(true);
 
 async function copyInviteLink() {
-  const inviteUrl = `${window.location.origin}/#/?invite=${groupId}`;
+  // Generates clean HTML5 History URL without hash: e.g. http://localhost:9000/?invite=simpredictiongp
+  const inviteUrl = `${window.location.origin}/?invite=${groupId}`;
   try {
     await copyToClipboard(inviteUrl);
     Notify.create({

@@ -17,10 +17,8 @@
           <q-avatar size="80px" color="primary" text-color="white" class="q-mb-md">
             {{ username.charAt(0).toUpperCase() }}
           </q-avatar>
-          <div class="text-h6 text-weight-bold text-primary">Edit User Profile</div>
-          <div class="text-caption text-grey-6">
-            Update your display properties across leaderboards
-          </div>
+          <div class="text-h6 text-weight-bold text-primary">Edicion de Perfil</div>
+          <div class="text-caption text-grey-6">Actualiza tus datos personales</div>
         </q-card-section>
 
         <q-card-section>
@@ -43,7 +41,7 @@
             />
 
             <q-btn
-              label="Save Changes"
+              label="Guardar cambios"
               type="submit"
               color="primary"
               unelevated

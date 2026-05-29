@@ -93,7 +93,7 @@
     <div class="row items-center justify-between">
       <div>
         <q-chip v-if="isLocked" dense color="grey-3" text-color="grey-8" icon="lock">
-          Predictions Locked
+          Prediccion Cerrada
         </q-chip>
         <q-chip v-else dense color="green-1" text-color="green-8" icon="schedule"> Open </q-chip>
 

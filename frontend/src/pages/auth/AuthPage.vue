@@ -165,8 +165,13 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-// Intercepta el parámetro de invitación para unirse de forma automática
-const inviteGroupId = route.query.invite as string | undefined;
+// 1. Capture invite from URL and persist in SessionStorage to survive OAuth redirects
+let inviteGroupId = route.query.invite as string | undefined;
+if (inviteGroupId) {
+  sessionStorage.setItem('pending_invite_group', inviteGroupId);
+} else {
+  inviteGroupId = sessionStorage.getItem('pending_invite_group') || undefined;
+}
 
 const tabMode = ref<'login' | 'register'>('login');
 const email = ref('');
@@ -175,15 +180,18 @@ const username = ref('');
 const loading = ref(false);
 
 async function autoJoinGroupOnLogin() {
-  if (!inviteGroupId || !authStore.user?.id) return;
+  const targetGroupId = sessionStorage.getItem('pending_invite_group') || inviteGroupId;
+  if (!targetGroupId || !authStore.user?.id) return;
+
   try {
+    // Check if the user is already a member of this group
     const checkList = await pb.collection('group_members_id').getList(1, 1, {
-      filter: `prediction_group = "${inviteGroupId}" && user = "${authStore.user.id}"`,
+      filter: `prediction_group = "${targetGroupId}" && user = "${authStore.user.id}"`,
     });
 
     if (checkList.items.length === 0) {
       await pb.collection('group_members_id').create({
-        prediction_group: inviteGroupId,
+        prediction_group: targetGroupId,
         user: authStore.user.id,
         total_points: 0,
         rank: 1,
@@ -193,8 +201,11 @@ async function autoJoinGroupOnLogin() {
         message: '¡Te has unido al grupo de predicción de forma automática!',
       });
     }
+
+    // Clean up storage so it does not trigger redundant checks on future logins
+    sessionStorage.removeItem('pending_invite_group');
   } catch (err: unknown) {
-    console.error('La unión automática falló:', err);
+    console.error('La unión automática al grupo falló:', err);
   }
 }
 
@@ -203,7 +214,7 @@ async function handleLogin() {
   try {
     await authStore.loginEmail(email.value, password.value);
     Notify.create({ type: 'positive', message: '¡Bienvenido nuevamente!' });
-    await autoJoinGroupOnLogin();
+    await autoJoinGroupOnLogin(); // Safe persistent join
     void router.push('/app/matches');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Credenciales inválidas';
@@ -218,7 +229,7 @@ async function handleRegister() {
   try {
     await authStore.register(email.value, password.value, username.value);
     Notify.create({ type: 'positive', message: '¡Cuenta registrada exitosamente!' });
-    await autoJoinGroupOnLogin();
+    await autoJoinGroupOnLogin(); // Safe persistent join
     void router.push('/app/matches');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Error en el registro';
@@ -232,7 +243,7 @@ async function handleGoogleSignIn() {
   try {
     await authStore.loginGoogle();
     Notify.create({ type: 'positive', message: '¡Autenticación con Google completada!' });
-    await autoJoinGroupOnLogin();
+    await autoJoinGroupOnLogin(); // Safe persistent join
     void router.push('/app/matches');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Error en Google OAuth';
@@ -240,7 +251,6 @@ async function handleGoogleSignIn() {
   }
 }
 </script>
-
 <style scoped>
 .bg-gradient {
   background: linear-gradient(135deg, #1a2d5a 0%, #0d1b2a 100%);
