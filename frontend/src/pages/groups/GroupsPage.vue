@@ -1,24 +1,31 @@
 <template>
   <q-page class="q-pa-md">
     <div class="row items-center justify-between q-mb-lg">
-      <div class="text-h6 text-weight-bold text-primary">Grupos de Juego</div>
+      <div class="text-h6 text-weight-bold text-primary">Grupos de Predicción</div>
       <div class="q-gutter-x-sm">
         <q-btn
-          label="Unirse con codigo"
+          label="Unirse con Código"
           color="secondary"
           outline
           dense
           class="q-px-md"
           @click="showJoinDialog"
         />
+
+        <!-- Creation button disabled dynamically after group phase ends -->
         <q-btn
           label="Crear Grupo"
           color="primary"
           unelevated
           dense
           class="q-px-md"
+          :disabled="isGroupCreationDisabled"
           @click="showCreateDialog"
-        />
+        >
+          <q-tooltip v-if="isGroupCreationDisabled" class="bg-red text-white">
+            La creación de grupos está cerrada porque la Fase de Grupos ya finalizó.
+          </q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -29,7 +36,7 @@
 
     <div v-else class="row q-col-gutter-md">
       <div v-if="groups.length === 0" class="col-12 text-center q-my-xl text-grey-6">
-        You are not a member of any prediction group yet. Click above to join or create one!
+        No eres miembro de ningún grupo de predicción todavía. ¡Únete o crea uno arriba!
       </div>
       <div v-for="group in groups" :key="group.id" class="col-12 col-sm-6 col-md-4">
         <q-card
@@ -43,11 +50,11 @@
               {{ group.name }}
             </div>
             <div class="text-caption text-grey-6 q-mt-xs">
-              Creador: {{ group.expand?.owner?.username || 'System' }}
+              Creador: {{ group.expand?.owner?.username || 'Sistema' }}
             </div>
           </q-card-section>
           <q-card-actions align="right">
-            <q-btn flat label="Ver Tabla" color="primary" dense />
+            <q-btn flat label="Ver Posiciones" color="primary" dense />
           </q-card-actions>
         </q-card>
       </div>
@@ -57,20 +64,20 @@
     <q-dialog v-model="joinDialog" persistent>
       <q-card style="min-width: 320px">
         <q-card-section class="q-pb-none">
-          <div class="text-h6 text-weight-bold">Join Group</div>
+          <div class="text-h6 text-weight-bold">Unirse a Grupo</div>
         </q-card-section>
         <q-card-section class="q-py-md">
           <q-input
             v-model="inviteCode"
             outlined
-            label="Invite Code"
-            placeholder="Enter 8-digit token"
+            label="Código de Invitación"
+            placeholder="Ingresar código de 8 dígitos"
             dense
           />
         </q-card-section>
         <q-card-actions align="right" class="q-pt-none q-pb-md q-px-md">
-          <q-btn flat label="Cancel" color="grey-6" v-close-popup />
-          <q-btn label="Join" color="primary" unelevated :loading="joining" @click="joinGroup" />
+          <q-btn flat label="Cancelar" color="grey-6" v-close-popup />
+          <q-btn label="Unirse" color="primary" unelevated :loading="joining" @click="joinGroup" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -79,21 +86,21 @@
     <q-dialog v-model="createDialog" persistent>
       <q-card style="min-width: 320px">
         <q-card-section class="q-pb-none">
-          <div class="text-h6 text-weight-bold">Create Group</div>
+          <div class="text-h6 text-weight-bold">Crear Grupo</div>
         </q-card-section>
         <q-card-section class="q-py-md">
           <q-input
             v-model="newGroupName"
             outlined
-            label="Group Name"
-            placeholder="e.g. Work Friends"
+            label="Nombre de Grupo"
+            placeholder="Ej. Amigos del Trabajo"
             dense
           />
         </q-card-section>
         <q-card-actions align="right" class="q-pt-none q-pb-md q-px-md">
-          <q-btn flat label="Cancel" color="grey-6" v-close-popup />
+          <q-btn flat label="Cancelar" color="grey-6" v-close-popup />
           <q-btn
-            label="Create"
+            label="Crear"
             color="primary"
             unelevated
             :loading="creating"
@@ -106,15 +113,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { pb } from 'src/boot/pocketbase';
-import { useAuthStore } from 'src/stores/auth';
-import type { PredictionGroup } from 'src/types';
+import { Notify } from 'quasar';
+import { pb } from '@/boot/pocketbase';
+import { useAuthStore } from '@/stores/auth';
+import type { PredictionGroup } from '@/types';
 
 const router = useRouter();
-const $q = useQuasar();
 const authStore = useAuthStore();
 
 const groups = ref<PredictionGroup[]>([]);
@@ -128,16 +134,27 @@ const createDialog = ref(false);
 const newGroupName = ref('');
 const creating = ref(false);
 
+// Active tournament phase state
+const currentPhase = ref('group');
+const isGroupCreationDisabled = computed(() => currentPhase.value !== 'group');
+
+async function fetchTournamentSettings() {
+  try {
+    const settings = await pb.collection('settings_id').getOne('tournsettings26');
+    currentPhase.value = settings.current_phase || 'group';
+  } catch (err: unknown) {
+    console.error('Failed fetching tournament settings:', err);
+  }
+}
+
 async function fetchMyGroups() {
   if (!authStore.user?.id) return;
   try {
-    // 1. Get all memberships for the logged in user
     const memberships = await pb.collection('group_members_id').getFullList({
       filter: `user = "${authStore.user.id}"`,
       expand: 'prediction_group.owner',
     });
 
-    // 2. Map and extract group records
     groups.value = memberships
       .map((m) => {
         const g = m.expand?.prediction_group as unknown as PredictionGroup;
@@ -165,18 +182,15 @@ async function joinGroup() {
   if (!inviteCode.value || !authStore.user?.id) return;
   joining.value = true;
   try {
-    // Resolve Group by invite code
     const groupList = await pb.collection('prediction_groups_id').getList(1, 1, {
       filter: `invite_code = "${inviteCode.value}"`,
     });
 
     const targetGroup = groupList.items[0];
-    // TypeScript safe guard: completely narrows the type
     if (!targetGroup) {
-      throw new Error('Invalid or expired invite code.');
+      throw new Error('Código de invitación inválido o vencido.');
     }
 
-    // Create membership record
     await pb.collection('group_members_id').create({
       prediction_group: targetGroup.id,
       user: authStore.user.id,
@@ -185,26 +199,27 @@ async function joinGroup() {
     });
 
     joinDialog.value = false;
-    $q.notify({ type: 'positive', message: 'Successfully joined group!' });
-
-    // Prefix with void to satisfy @typescript-eslint/no-floating-promises
+    Notify.create({ type: 'positive', message: '¡Te has unido al grupo exitosamente!' });
     void fetchMyGroups();
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Please try again';
-    $q.notify({ type: 'negative', message: message });
+    const message = err instanceof Error ? err.message : 'Por favor intente nuevamente';
+    Notify.create({ type: 'negative', message: message });
   } finally {
     joining.value = false;
   }
 }
 
-// Generate random alphanumeric 8-character token
 function generateInviteToken(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(Math.floor(randValue() * chars.length));
   }
   return result;
+}
+
+function randValue(): number {
+  return Math.random();
 }
 
 async function createGroup() {
@@ -213,7 +228,6 @@ async function createGroup() {
   try {
     const inviteToken = generateInviteToken();
 
-    // Create prediction group
     const createdGroup = await pb.collection('prediction_groups_id').create({
       name: newGroupName.value,
       owner: authStore.user.id,
@@ -221,7 +235,6 @@ async function createGroup() {
       is_public: false,
     });
 
-    // Automatically register creator as a member
     await pb.collection('group_members_id').create({
       prediction_group: createdGroup.id,
       user: authStore.user.id,
@@ -230,29 +243,30 @@ async function createGroup() {
     });
 
     createDialog.value = false;
-    $q.notify({ type: 'positive', message: 'Group successfully created!' });
-
-    // Prefix with void to satisfy floating promise rules
+    Notify.create({ type: 'positive', message: '¡Grupo creado exitosamente!' });
     void fetchMyGroups();
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Please try again';
-    $q.notify({ type: 'negative', message: message });
+    const message = err instanceof Error ? err.message : 'Por favor intente nuevamente';
+    Notify.create({ type: 'negative', message: message });
   } finally {
     creating.value = false;
   }
 }
 
 function goToGroup(id: string) {
-  // Prefix router push with void to satisfy floating promise rules
   void router.push(`/app/groups/${id}`);
 }
 
 onMounted(() => {
+  void fetchTournamentSettings();
   void fetchMyGroups();
 });
 </script>
 
 <style scoped>
+.rounded-borders {
+  border-radius: 8px;
+}
 .hover-shadow {
   transition: box-shadow 0.2s ease-in-out;
 }

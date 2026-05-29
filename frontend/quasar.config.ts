@@ -39,7 +39,7 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
     build: {
       env: {
-        VITE_BACKEND_URL: process.env.VITE_BACKEND_URL,
+        VITE_BACKEND_URL: process.env.VITE_BACKEND_URL || 'http://localhost:8090',
         VITE_APP_NAME: process.env.VITE_APP_NAME || 'Prode',
       },
       alias: {
@@ -100,8 +100,15 @@ export default defineConfig((/* ctx */) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
-
+      config: {
+        dark: true, // <-- Configures Dark Mode as the global application default
+        brand: {
+          primary: '#549edf',
+          secondary: '#ffffff',
+          accent: '#e3a824',
+          dark: '#112347',
+        },
+      },
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
 

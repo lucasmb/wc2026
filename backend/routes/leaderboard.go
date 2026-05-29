@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/pocketbase/dbx"
@@ -9,46 +10,71 @@ import (
 )
 
 type LeaderboardRow struct {
-	UserID      string `db:"id" json:"userId"`
-	Username    string `db:"username" json:"username"`
-	AvatarUrl   string `db:"avatar_url" json:"avatarUrl"`
-	TotalPoints int    `db:"total_points" json:"totalPoints"`
-	Rank        int    `db:"rank" json:"rank"`
+	UserID      string `json:"userId"`
+	Username    string `json:"username"`
+	AvatarUrl   string `json:"avatarUrl"`
+	TotalPoints int    `json:"totalPoints"`
+	Rank        int    `json:"rank"`
 }
 
 func RegisterLeaderboard(app core.App, se *core.ServeEvent) {
 	se.Router.GET("/api/wc/leaderboard/{groupId}", func(e *core.RequestEvent) error {
-		// Enforce standard Auth
+		// 1. Enforce Standard Auth
 		if e.Auth == nil {
 			return apis.NewUnauthorizedError("Authentication required", nil)
 		}
 
 		groupID := e.Request.PathValue("groupId")
 
-		// 1. Verify group membership prior to disclosure
-		var count int
-		err := app.DB().
-			Select("COUNT(*)").
-			From("group_members").
-			Where(dbx.HashExp{"prediction_group": groupID, "user": e.Auth.Id}).
-			Row(&count)
-
-		if err != nil || count == 0 {
+		// 2. Safe check group membership via high-level ORM
+		member, err := app.FindFirstRecordByFilter(
+			"group_members_id",
+			"prediction_group = {:groupId} && user = {:userId}",
+			dbx.Params{"groupId": groupID, "userId": e.Auth.Id},
+		)
+		if err != nil || member == nil {
 			return apis.NewForbiddenError("You are not a member of this prediction group", nil)
 		}
 
-		// 2. Query rankings and join core user data fields cleanly
-		var rows []LeaderboardRow
-		err = app.DB().
-			Select("users.id", "users.username", "users.avatar_url", "group_members.total_points", "group_members.rank").
-			From("group_members").
-			LeftJoin("users", dbx.NewExp("group_members.user = users.id")).
-			Where(dbx.HashExp{"group_members.prediction_group": groupID}).
-			OrderBy("group_members.rank ASC, users.username ASC").
-			All(&rows)
-
+		// 3. Fetch all group members ordered by Rank ascending
+		members, err := app.FindRecordsByFilter(
+			"group_members_id",
+			"prediction_group = {:groupId}",
+			"rank", // Sort by rank ASC
+			0,
+			0,
+			dbx.Params{"groupId": groupID},
+		)
 		if err != nil {
-			return apis.NewBadRequestError("Could not calculate leaderboard standings", err)
+			return apis.NewBadRequestError("Could not retrieve group members", err)
+		}
+
+		// 4. Expand the "user" relation to retrieve user profiles
+		errs := app.ExpandRecords(members, []string{"user"}, nil)
+		if len(errs) > 0 {
+			// Log but do not fail, fall back to "Unknown" username if expansion partially slips
+			fmt.Printf("⚠️ Expansion warnings on leaderboard users: %v\n", errs)
+		}
+
+		// 5. Structure payload to match frontend JSON expectations
+		rows := make([]LeaderboardRow, 0, len(members))
+		for _, m := range members {
+			userRec := m.ExpandedOne("user")
+			username := "Unknown"
+			avatarUrl := ""
+
+			if userRec != nil {
+				username = userRec.GetString("username")
+				avatarUrl = userRec.GetString("avatar_url")
+			}
+
+			rows = append(rows, LeaderboardRow{
+				UserID:      m.GetString("user"),
+				Username:    username,
+				AvatarUrl:   avatarUrl,
+				TotalPoints: m.GetInt("total_points"),
+				Rank:        m.GetInt("rank"),
+			})
 		}
 
 		return e.JSON(http.StatusOK, rows)
