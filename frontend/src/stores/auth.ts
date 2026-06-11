@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { pb } from '@/boot/pocketbase';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(pb.authStore.record);
   // Configure as a reactive ref to guarantee Vue-Router tracks it correctly
   const isLoggedIn = ref(pb.authStore.isValid);
+  const isAdmin = computed(() => !!user.value?.is_admin);
 
   // Sync state changes from PocketBase's internal authStore
   pb.authStore.onChange((_token, model) => {
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     isLoggedIn,
+    isAdmin,
     loginEmail,
     register,
     loginGoogle,

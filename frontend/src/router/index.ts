@@ -25,12 +25,13 @@ export default route(function (/* { store, ssrContext } */) {
   Router.beforeEach((to, _from, next) => {
     const authStore = useAuthStore();
     const isAuthRequired = to.matched.some((record) => record.meta.requiresAuth);
+    const isAdminRequired = to.matched.some((record) => record.meta.requiresAdmin);
 
     if (isAuthRequired && !authStore.isLoggedIn) {
-      // 1. Not logged in -> redirect to login portal
       next({ path: '/' });
+    } else if (isAdminRequired && !authStore.isAdmin) {
+      next({ path: '/app/matches' });
     } else if (!isAuthRequired && authStore.isLoggedIn) {
-      // 2. Already logged in -> redirect forward to matches
       next({ path: '/app/matches' });
     } else {
       next();

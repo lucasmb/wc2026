@@ -97,6 +97,7 @@ func main() {
 
 		routes.RegisterLeaderboard(app, se)
 		routes.RegisterSync(app, se)
+		routes.RegisterExternalAPI(app, se)
 
 		return se.Next()
 	})

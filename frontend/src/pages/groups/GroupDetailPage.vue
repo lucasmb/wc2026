@@ -12,7 +12,7 @@
           <q-btn
             flat
             dense
-            size="sm"
+            size="md"
             color="primary"
             icon="share"
             label="Invitar amigos"
@@ -49,13 +49,19 @@
                 v-for="user in leaderboard"
                 :key="user.userId"
                 class="q-py-md q-my-sm rounded-borders list-row-animation"
-                :class="getRankingClass(user.rank)"
+                :class="
+                  user.totalPoints > 0
+                    ? getRankingClass(user.rank)
+                    : $q.dark.isActive
+                      ? 'bg-grey-9 border'
+                      : 'bg-grey-1 border'
+                "
               >
                 <!-- Rank Medal Icon / Badge Slot -->
                 <q-item-section avatar class="row items-center justify-center">
                   <div class="row items-center q-gutter-x-sm">
                     <q-icon
-                      v-if="user.rank <= 3"
+                      v-if="user.totalPoints > 0 && user.rank <= 3"
                       name="emoji_events"
                       size="28px"
                       :color="getMedalColor(user.rank)"
@@ -63,7 +69,7 @@
                     <span
                       class="text-subtitle1 text-weight-bolder"
                       :class="
-                        user.rank <= 3
+                        user.totalPoints > 0 && user.rank <= 3
                           ? 'text-black'
                           : $q.dark.isActive
                             ? 'text-grey-4'
@@ -80,8 +86,8 @@
                   <div class="row items-center q-gutter-x-md">
                     <q-avatar
                       size="40px"
-                      :color="user.rank <= 3 ? 'white' : 'primary'"
-                      :text-color="user.rank <= 3 ? 'black' : 'white'"
+                      :color="user.totalPoints > 0 && user.rank <= 3 ? 'white' : 'primary'"
+                      :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'white'"
                       class="shadow-1"
                     >
                       {{ user.username.charAt(0).toUpperCase() }}
@@ -90,7 +96,7 @@
                       <q-item-label
                         class="text-subtitle2 text-weight-bold"
                         :class="
-                          user.rank <= 3
+                          user.totalPoints > 0 && user.rank <= 3
                             ? 'text-black'
                             : $q.dark.isActive
                               ? 'text-white'
@@ -101,11 +107,10 @@
                       </q-item-label>
                       <q-item-label
                         caption
-                        v-if="user.rank === 1"
-                        class="text-weight-bold"
-                        :class="user.rank <= 3 ? 'text-amber-10' : 'text-grey-6'"
+                        v-if="user.totalPoints > 0 && user.rank === 1"
+                        class="text-weight-bold text-amber-10"
                       >
-                        Lider
+                        Líder
                       </q-item-label>
                     </div>
                   </div>
@@ -115,8 +120,8 @@
                 <q-item-section side>
                   <q-chip
                     dense
-                    :color="user.rank <= 3 ? 'black' : 'primary'"
-                    :text-color="user.rank <= 3 ? 'white' : 'white'"
+                    :color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'primary'"
+                    :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'white' : 'white'"
                     class="text-weight-bolder text-subtitle2 q-px-md shadow-2"
                   >
                     {{ user.totalPoints }} Pts
@@ -146,8 +151,8 @@ const leaderboard = ref<LeaderboardUser[]>([]);
 const loading = ref(true);
 
 async function copyInviteLink() {
-  // Generates clean HTML5 History URL without hash: e.g. http://localhost:9000/?invite=simpredictiongp
-  const inviteUrl = `${window.location.origin}/?invite=${groupId}`;
+  // Generates cross-platform hash-based URL
+  const inviteUrl = `${window.location.origin}/#/?invite=${groupId}`;
   try {
     await copyToClipboard(inviteUrl);
     Notify.create({

@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useQuasar } from 'quasar';
@@ -135,12 +135,20 @@ const authStore = useAuthStore();
 const router = useRouter();
 const $q = useQuasar();
 
-const navLinks = [
+const baseNavLinks = [
   { to: '/app/matches', icon: 'sports_soccer', label: 'Partidos' },
   { to: '/app/groups', icon: 'group', label: 'Grupos' },
   { to: '/app/bracket', icon: 'account_tree', label: 'Llaves' },
   { to: '/app/profile', icon: 'person', label: 'Perfil' },
 ];
+
+const navLinks = computed(() => {
+  const links = [...baseNavLinks];
+  if (authStore.isAdmin) {
+    links.splice(3, 0, { to: '/app/admin/results', icon: 'admin_panel_settings', label: 'Admin' });
+  }
+  return links;
+});
 
 function toggleDarkMode() {
   $q.dark.set(!$q.dark.isActive);

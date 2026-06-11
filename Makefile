@@ -12,12 +12,12 @@ all: run-all
 # Run Go Pocketbase backend server
 run-backend:
 	@echo "Starting Pocketbase backend serve..."
-	cd backend && go run main.go serve --http="127.0.0.1:8090"
+	cd backend && go run *.go serve --http="127.0.0.1:8090"
 
 # Run Quasar frontend dev server
 run-frontend:
 	@echo "Starting Quasar frontend dev server..."
-	pnpm --filter frontend dev || pnpm -C frontend dev
+	pnpm --filter wc2026 dev 
 
 # Run both frontend and backend concurrently in local terminal
 run-all:
