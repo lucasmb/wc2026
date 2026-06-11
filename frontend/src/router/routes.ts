@@ -20,6 +20,11 @@ const routes: RouteRecordRaw[] = [
       { path: 'groups', component: () => import('@/pages/groups/GroupsPage.vue') },
       { path: 'groups/:id', component: () => import('@/pages/groups/GroupDetailPage.vue') },
       { path: 'profile', component: () => import('@/pages/profile/ProfilePage.vue') }, // New
+      {
+        path: 'admin/results',
+        component: () => import('@/pages/admin/AdminResultsPage.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   {
