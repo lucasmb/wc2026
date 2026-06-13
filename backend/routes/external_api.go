@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/pocketbase/pocketbase/apis"
@@ -38,6 +38,7 @@ type ExternalMatchData struct {
 	GroupCode   string                 `json:"group_code"`
 	External    map[string]interface{} `json:"external"`
 	Local       map[string]interface{} `json:"local"`
+	Swapped     bool                   `json:"swapped"`
 }
 
 func RegisterExternalAPI(app core.App, se *core.ServeEvent) {
@@ -91,34 +92,28 @@ func RegisterExternalAPI(app core.App, se *core.ServeEvent) {
 			return apis.NewBadRequestError("Failed to fetch local matches", err)
 		}
 
-		localByNumber := make(map[int]*core.Record)
-		for _, m := range localMatches {
-			mn := m.GetInt("match_number")
-			localByNumber[mn] = m
-		}
-
 		teams, _ := app.FindAllRecords("teams_id")
 		teamById := make(map[string]string)
-		teamByCode := make(map[string]string)
+		teamByName := make(map[string]*core.Record)
 		for _, t := range teams {
-			teamById[t.Id] = t.GetString("name")
-			teamByCode[t.GetString("code")] = t.GetString("name")
+			name := t.GetString("name")
+			teamById[t.Id] = name
+			teamByName[strings.ToLower(name)] = t
+		}
+
+		localByTeamsAndGroup := make(map[string]*core.Record)
+		for _, m := range localMatches {
+			homeTeamID := m.GetString("home_team")
+			awayTeamID := m.GetString("away_team")
+			groupCode := m.GetString("group_code")
+			homeName := strings.ToLower(teamById[homeTeamID])
+			awayName := strings.ToLower(teamById[awayTeamID])
+			key := fmt.Sprintf("%s|%s|%s", homeName, awayName, groupCode)
+			localByTeamsAndGroup[key] = m
 		}
 
 		var result []ExternalMatchData
 		for _, game := range externalData.Games {
-			matchNum := 0
-			if id, ok := game["id"]; ok {
-				switch v := id.(type) {
-				case string:
-					matchNum, _ = strconv.Atoi(v)
-				case float64:
-					matchNum = int(v)
-				}
-			}
-
-			localMatch, hasLocal := localByNumber[matchNum]
-
 			phase := "group"
 			groupCode := ""
 			if t, ok := game["type"]; ok {
@@ -131,12 +126,28 @@ func RegisterExternalAPI(app core.App, se *core.ServeEvent) {
 				}
 			}
 
+			extHomeName := ""
+			extAwayName := ""
+			if name, ok := game["home_team_name_en"]; ok {
+				extHomeName = fmt.Sprintf("%v", name)
+			}
+			if name, ok := game["away_team_name_en"]; ok {
+				extAwayName = fmt.Sprintf("%v", name)
+			}
+
+			localMatch, swapped := findLocalMatch(localByTeamsAndGroup, teamByName, extHomeName, extAwayName, groupCode)
+
+			matchNum := 0
+			if localMatch != nil {
+				matchNum = localMatch.GetInt("match_number")
+			}
+
 			local := map[string]interface{}{
 				"status":     "unknown",
 				"score_home": nil,
 				"score_away": nil,
 			}
-			if hasLocal {
+			if localMatch != nil {
 				local["status"] = localMatch.GetString("status")
 				local["score_home"] = localMatch.Get("score_home")
 				local["score_away"] = localMatch.Get("score_away")
@@ -153,6 +164,7 @@ func RegisterExternalAPI(app core.App, se *core.ServeEvent) {
 				GroupCode:   groupCode,
 				External:    game,
 				Local:       local,
+				Swapped:     swapped,
 			})
 		}
 
@@ -185,9 +197,28 @@ func RegisterExternalAPI(app core.App, se *core.ServeEvent) {
 					continue
 				}
 
-				match.Set("score_home", payload.ScoreHome)
-				match.Set("score_away", payload.ScoreAway)
+				scoreHome := payload.ScoreHome
+				scoreAway := payload.ScoreAway
+
+				if payload.Swapped {
+					scoreHome, scoreAway = scoreAway, scoreHome
+				}
+
+				match.Set("score_home", scoreHome)
+				match.Set("score_away", scoreAway)
 				match.Set("status", payload.Status)
+
+				if payload.Status == "finished" {
+					homeTeamID := match.GetString("home_team")
+					awayTeamID := match.GetString("away_team")
+					if scoreHome > scoreAway {
+						match.Set("winner", homeTeamID)
+					} else if scoreAway > scoreHome {
+						match.Set("winner", awayTeamID)
+					} else {
+						match.Set("winner", nil)
+					}
+				}
 
 				if err := txApp.Save(match); err != nil {
 					return fmt.Errorf("failed updating match #%d: %w", payload.MatchNumber, err)
@@ -213,6 +244,58 @@ func isAdminUser(e *core.RequestEvent) bool {
 		return false
 	}
 	return e.Auth.GetBool("is_admin")
+}
+
+func findLocalMatch(localByTeamsAndGroup map[string]*core.Record, teamByName map[string]*core.Record, extHomeName, extAwayName, groupCode string) (*core.Record, bool) {
+	extHomeLower := strings.ToLower(extHomeName)
+	extAwayLower := strings.ToLower(extAwayName)
+
+	homeKey := normalizeTeamName(extHomeLower)
+	awayKey := normalizeTeamName(extAwayLower)
+
+	key := fmt.Sprintf("%s|%s|%s", homeKey, awayKey, groupCode)
+	if match, ok := localByTeamsAndGroup[key]; ok {
+		return match, false
+	}
+
+	swappedKey := fmt.Sprintf("%s|%s|%s", awayKey, homeKey, groupCode)
+	if match, ok := localByTeamsAndGroup[swappedKey]; ok {
+		return match, true
+	}
+
+	return nil, false
+}
+
+func normalizeTeamName(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	
+	replacements := map[string]string{
+		"czech republic": "czechia",
+		"czech rep":      "czechia",
+		"south korea":    "korea republic",
+		"korea":          "korea republic",
+		"usa":            "united states",
+		"united states of america": "united states",
+		"trinidad and tobago": "trinidad & tobago",
+		"bosnia and herzegovina": "bosnia & herzegovina",
+		"bosnia-herzegovina": "bosnia & herzegovina",
+		"democratic republic of congo": "congo dr",
+		"dr congo": "congo dr",
+		"congo": "congo dr",
+		"cape verde": "cape verde",
+		"cabo verde": "cape verde",
+		"turkey": "turkiye",
+		"ivory coast": "cote d'ivoire",
+		"côte d'ivoire": "cote d'ivoire",
+	}
+
+	for from, to := range replacements {
+		if name == from {
+			return to
+		}
+	}
+
+	return name
 }
 
 func getWC26Token(app core.App) (string, error) {

@@ -139,13 +139,16 @@ const baseNavLinks = [
   { to: '/app/matches', icon: 'sports_soccer', label: 'Partidos' },
   { to: '/app/groups', icon: 'group', label: 'Grupos' },
   { to: '/app/bracket', icon: 'account_tree', label: 'Llaves' },
+  { to: '/app/predictions-breakdown', icon: 'analytics', label: 'Resultados' },
   { to: '/app/profile', icon: 'person', label: 'Perfil' },
+  { to: '/app/info', icon: 'info', label: 'Info' },
 ];
 
 const navLinks = computed(() => {
   const links = [...baseNavLinks];
   if (authStore.isAdmin) {
-    links.splice(3, 0, { to: '/app/admin/results', icon: 'admin_panel_settings', label: 'Admin' });
+    links.push({ to: '/app/admin/results', icon: 'cloud_sync', label: 'Sync Results' });
+    links.push({ to: '/app/admin/matches', icon: 'edit', label: 'Edit Matches' });
   }
   return links;
 });

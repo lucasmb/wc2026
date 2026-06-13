@@ -17,7 +17,7 @@ run-backend:
 # Run Quasar frontend dev server
 run-frontend:
 	@echo "Starting Quasar frontend dev server..."
-	pnpm --filter wc2026 dev 
+	pnpm --filter wc2026 dev
 
 # Run both frontend and backend concurrently in local terminal
 run-all:
@@ -59,4 +59,4 @@ upload:
 		-e "ssh -p $(REMOTE_PORT)" \
 		backend/bin/$(BINARY_NAME) \
 		$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_PATH)
-	@ssh -p $(REMOTE_PORT) -t $(REMOTE_USER)@$(REMOTE_HOST) "sudo systemctl restart calometrics-api.service"
+	@ssh -p $(REMOTE_PORT) -t $(REMOTE_USER)@$(REMOTE_HOST) "sudo systemctl restart wc2026-api.service"

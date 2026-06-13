@@ -2,7 +2,7 @@
   <!-- Dynamic page background class -->
   <q-page
     class="q-pa-md row justify-center items-center"
-    :class="$q.dark.isActive ? 'bg-grey-11' : 'bg-grey-1'"
+    :class="$q.dark.isActive ? 'bg-dark' : 'bg-grey-1'"
   >
     <div class="col-12 col-sm-8 col-md-5">
       <!-- Dynamic card theme and background classes -->
@@ -15,7 +15,8 @@
       >
         <q-card-section class="text-center">
           <q-avatar size="80px" color="primary" text-color="white" class="q-mb-md">
-            {{ username.charAt(0).toUpperCase() }}
+            <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" />
+            <span v-else>{{ username.charAt(0).toUpperCase() }}</span>
           </q-avatar>
           <div class="text-h6 text-weight-bold text-primary">Edicion de Perfil</div>
           <div class="text-caption text-grey-6">Actualiza tus datos personales</div>

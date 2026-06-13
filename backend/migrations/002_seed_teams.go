@@ -48,7 +48,7 @@ func init() {
 			// Group F
 			{"code": "NED", "name": "Netherlands", "group_code": "F", "flag_url": "https://flagcdn.com/nl.svg"},
 			{"code": "JPN", "name": "Japan", "group_code": "F", "flag_url": "https://flagcdn.com/jp.svg"},
-			{"code": "ALB", "name": "Albania", "group_code": "F", "flag_url": "https://flagcdn.com/al.svg"},
+			{"code": "SWE", "name": "Sweden", "group_code": "F", "flag_url": "https://flagcdn.com/se.svg"},
 			{"code": "TUN", "name": "Tunisia", "group_code": "F", "flag_url": "https://flagcdn.com/tn.svg"},
 
 			// Group G
@@ -66,7 +66,7 @@ func init() {
 			// Group I
 			{"code": "FRA", "name": "France", "group_code": "I", "flag_url": "https://flagcdn.com/fr.svg"},
 			{"code": "SEN", "name": "Senegal", "group_code": "I", "flag_url": "https://flagcdn.com/sn.svg"},
-			{"code": "BOL", "name": "Bolivia", "group_code": "I", "flag_url": "https://flagcdn.com/bo.svg"},
+			{"code": "IRQ", "name": "Irak", "group_code": "I", "flag_url": "https://flagcdn.com/iq.svg"},
 			{"code": "NOR", "name": "Norway", "group_code": "I", "flag_url": "https://flagcdn.com/no.svg"},
 
 			// Group J
