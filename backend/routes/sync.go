@@ -15,7 +15,8 @@ type SyncRequestPayload struct {
 	MatchNumber int    `json:"match_number"`
 	ScoreHome   int    `json:"score_home"`
 	ScoreAway   int    `json:"score_away"`
-	Status      string `json:"status"` // "upcoming", "live", "finished"
+	Status      string `json:"status"`
+	Swapped     bool   `json:"swapped"`
 }
 
 func RegisterSync(app core.App, se *core.ServeEvent) {

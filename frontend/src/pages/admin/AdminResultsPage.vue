@@ -243,6 +243,7 @@ interface ExternalMatchRow {
   editScoreAway: number | null;
   editStatus: string;
   isDirty: boolean;
+  swapped: boolean;
 }
 
 const loading = ref(false);
@@ -357,7 +358,7 @@ function getDiffColor(row: ExternalMatchRow): string {
 }
 
 function getRowClass(row: ExternalMatchRow): string {
-  if (row.isDirty) return 'bg-orange-1';
+  if (row.isDirty) return $q_dark() ? 'row-dirty-dark' : 'row-dirty-light';
   if (isExtFinished(row) && row.editStatus === 'finished') return $q_dark() ? 'bg-green-10' : 'bg-green-1';
   return '';
 }
@@ -414,6 +415,7 @@ async function fetchExternalMatches() {
         editScoreAway: item.local.score_away != null ? item.local.score_away as number : extAway,
         editStatus: (item.local.status as string) || (extFinished ? 'finished' : 'upcoming'),
         isDirty: false,
+        swapped: item.swapped || false,
       };
     });
 
@@ -442,6 +444,7 @@ async function syncSelected() {
       score_home: row.editScoreHome ?? 0,
       score_away: row.editScoreAway ?? 0,
       status: row.editStatus,
+      swapped: row.swapped || false,
     }));
 
     const response = await fetch(`${PB_URL}/api/wc/external/sync`, {
@@ -487,6 +490,7 @@ async function syncSingleRow(row: ExternalMatchRow) {
         score_home: row.editScoreHome ?? 0,
         score_away: row.editScoreAway ?? 0,
         status: row.editStatus,
+        swapped: row.swapped || false,
       },
     ];
 
@@ -520,7 +524,10 @@ async function syncSingleRow(row: ExternalMatchRow) {
 </script>
 
 <style scoped>
-.bg-orange-1 {
-  background-color: rgba(255, 152, 0, 0.08);
+.row-dirty-light {
+  background-color: rgba(255, 152, 0, 0.12);
+}
+.row-dirty-dark {
+  background-color: rgba(255, 152, 0, 0.25);
 }
 </style>

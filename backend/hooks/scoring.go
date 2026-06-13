@@ -162,10 +162,13 @@ func recalculateGroupLeaderboard(txApp core.App, groupID string) error {
 		}
 	}
 
+	currentRank := 1
 	for idx, s := range scores {
-		rank := idx + 1
+		if idx > 0 && s.Points < scores[idx-1].Points {
+			currentRank = idx + 1
+		}
 		s.Record.Set("total_points", s.Points)
-		s.Record.Set("rank", rank)
+		s.Record.Set("rank", currentRank)
 		if err := txApp.Save(s.Record); err != nil {
 			return err
 		}

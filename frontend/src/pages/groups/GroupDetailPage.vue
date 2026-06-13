@@ -81,7 +81,6 @@
                   </div>
                 </q-item-section>
 
-                <!-- Username and Avatar -->
                 <q-item-section>
                   <div class="row items-center q-gutter-x-md">
                     <q-avatar
@@ -90,7 +89,8 @@
                       :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'white'"
                       class="shadow-1"
                     >
-                      {{ user.username.charAt(0).toUpperCase() }}
+                      <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.username" />
+                      <span v-else>{{ user.username.charAt(0).toUpperCase() }}</span>
                     </q-avatar>
                     <div>
                       <q-item-label

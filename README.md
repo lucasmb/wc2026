@@ -1,44 +1,44 @@
-# Mundial 2026 — Prediction Platform (Prode)
+# Mundial 2026 — Plataforma de Pronósticos (Prode)
 
-Welcome to the **Mundial 2026** football predictions platform, designed for the FIFA World Cup 2026. This platform allows users to join groups, predict match scores, and climb group leaderboards in real-time.
+App de pronósticos de fútbol (PRODE) **Mundial 2026**, diseñada para la Copa Mundial de la FIFA 2026. Esta App permite a los usuarios unirse a grupos, predecir resultados de partidos y subir en las tablas de clasificación en tiempo real.
 
 ---
 
-## ⚽ Rules & Points Allocation System
+## ⚽ Reglas y Sistema de Asignación de Puntos
 
-Points are awarded dynamically based on match results and accuracy. Late-stage matches carry higher weights to reward late-tournament prediction success.
+Los puntos se otorgan de forma dinámica basándose en los resultados de los partidos y la precisión. Los partidos de las fases finales tienen un mayor peso para premiar el éxito de los pronósticos al final del torneo.
 
-### 1. Group Stage Match Point Logic
-* **Correct Result Only** (Win, Draw, or Loss): **`+2 Points`**
-* **Exact Score Bonus** (e.g., predicting 2-1 and match ends 2-1): **`+1 Point`** (Total **`3 Points`** awarded)
+### 1. Lógica de Puntos en Fase de Grupos
+* **Solo Resultado Correcto** (Ganador, Empate o Perdedor): **`+2 Puntos`**
+* **Bono por resultado Exacto** (ej. predecir 2-1 y que el partido termine 2-1): **`+1 Punto`** (Total de **`3 Puntos`** otorgados)
 
-### 2. Knockout Stage Point Multipliers
-As tension rises, matches yield progressively larger point gains:
+### 2. Multiplicadores de Puntos en Fase de Eliminación Directa
+A medida que aumenta la tensión, los partidos otorgan una cantidad de puntos progresivamente mayor:
 
-| Tournament Phase | Correct Result (W/L) | Exact Score Bonus | Max Possible Points |
+| Fase del Torneo | Resultado Correcto (G/P) | Bono Marcador Exacto | Máximo de Puntos |
 |---|:---:|:---:|:---:|
-| **Group Stage** | +2 Pts | +1 Pt | **3 Pts** |
-| **Round of 32 / 16** | +3 Pts | +2 Pts | **5 Pts** |
-| **Quarter / Semi-Finals** | +5 Pts | +3 Pts | **8 Pts** |
-| **Final / 3rd Place** | +8 Pts | +5 Pts | **13 Pts** |
+| **Fase de Grupos** | +2 Pts | +1 Pt | **3 Pts** |
+| **Dieciseisavos / Octavos** | +3 Pts | +2 Pts | **5 Pts** |
+| **Cuartos / Semifinales** | +5 Pts | +3 Pts | **8 Pts** |
+| **Final / 3er Puesto** | +8 Pts | +5 Pts | **13 Pts** |
 
 ---
 
-## 📝 How to Participate
+## 📝 Cómo Participar
 
-### Step 1: Account Connection
-* Open the application, register a display profile, or instantly connect using **Google Authentication**.
+### Paso 1: Conexión de Cuenta
+* Abre la aplicación, registra un perfil público o conéctate instantáneamente usando **Google Authentication**.
 
-### Step 2: Join or Create a Prediction Group
-* **Create a Group**: From the **Groups** tab, click *Create Group*. You will instantly receive an 8-character invite token.
-* **Join a Group**: Paste an 8-character invite token from friends to join their private leaderboard.
+### Paso 2: Únete o Crea un Grupo de Pronósticos
+* **Crear un Grupo**: Desde la pestaña **Grupos**, haz clic en *Crear Grupo*. Recibirás al instante un token de invitación de 8 caracteres.
+* **Unirse a un Grupo**: Pega el token de invitación de 8 caracteres de tus amigos para unirte a su tabla de clasificación privada.
 
-### Step 3: Enter Predictions (Mobile-First Dashboard)
-* Slide through Groups A to L using the top slider navigation.
-* Type in your predictions. Native mobile numerical keyboards are triggered automatically.
-* Negative numbers and non-digit characters are blocked.
-* Click **Save Group Predictions** to commit all predictions for that group in a single transaction. The page will automatically slide forward to the next group!
+### Paso 3: Ingresa Pronósticos (Panel Optimizado para Móviles)
+* Deslízate por los Grupos A al L usando el control de navegación superior.
+* Escribe tus pronósticos. Los teclados numéricos nativos de móviles se activarán automáticamente.
+* Los números negativos y caracteres no numéricos están bloqueados.
+* Haz clic en **Guardar Pronósticos del Grupo** para confirmar todas las predicciones de ese grupo en una sola transacción. ¡La página saltará automáticamente al siguiente grupo!
 
-### Step 4: Track the Brackets & Standings
-* Navigate to the **Brackets** tab to view your global progress or inspect empty knockout stages.
-* Toggle the **Sun/Moon icon** in the header to switch between the sky-blue Argentina Home Kit and the electric-charcoal Argentina Away Kit themes.
+### Paso 4: Sigue las Llaves y Posiciones
+* Navega a la pestaña **Llaves** (Brackets) para ver tu progreso global o inspeccionar las fases de eliminación directa vacías.
+* Toca el **ícono de Sol/Luna** en el encabezado para cambiar entre los temas de la camiseta titular de Argentina (celeste y blanca) y la camiseta suplente (carbón eléctrico).
