@@ -13,6 +13,7 @@ type LeaderboardRow struct {
 	UserID      string `json:"userId"`
 	Username    string `json:"username"`
 	AvatarUrl   string `json:"avatarUrl"`
+	Avatar      string `json:"avatar"`
 	TotalPoints int    `json:"totalPoints"`
 	Rank        int    `json:"rank"`
 }
@@ -62,16 +63,19 @@ func RegisterLeaderboard(app core.App, se *core.ServeEvent) {
 			userRec := m.ExpandedOne("user")
 			username := "Unknown"
 			avatarUrl := ""
+			avatar := ""
 
 			if userRec != nil {
 				username = userRec.GetString("username")
 				avatarUrl = userRec.GetString("avatar_url")
+				avatar = userRec.GetString("avatar")
 			}
 
 			rows = append(rows, LeaderboardRow{
 				UserID:      m.GetString("user"),
 				Username:    username,
 				AvatarUrl:   avatarUrl,
+				Avatar:      avatar,
 				TotalPoints: m.GetInt("total_points"),
 				Rank:        m.GetInt("rank"),
 			})

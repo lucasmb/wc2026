@@ -81,17 +81,17 @@
                   </div>
                 </q-item-section>
 
-                <q-item-section>
-                  <div class="row items-center q-gutter-x-md">
-                    <q-avatar
-                      size="40px"
-                      :color="user.totalPoints > 0 && user.rank <= 3 ? 'white' : 'primary'"
-                      :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'white'"
-                      class="shadow-1"
-                    >
-                      <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.username" />
-                      <span v-else>{{ user.username.charAt(0).toUpperCase() }}</span>
-                    </q-avatar>
+              <q-item-section>
+                <div class="row items-center q-gutter-x-md">
+                  <q-avatar
+                    size="40px"
+                    :color="user.totalPoints > 0 && user.rank <= 3 ? 'white' : 'primary'"
+                    :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'white'"
+                    class="shadow-1"
+                  >
+                    <img v-if="user.avatarUrl || user.avatar" :src="user.avatarUrl || user.avatar" :alt="user.username" />
+                    <span v-else>{{ user.username.charAt(0).toUpperCase() }}</span>
+                  </q-avatar>
                     <div>
                       <q-item-label
                         class="text-subtitle2 text-weight-bold"
