@@ -64,6 +64,7 @@ export interface LeaderboardUser {
   userId: string;
   username: string;
   avatarUrl: string;
+  avatar: string;
   totalPoints: number;
   rank: number;
 }
