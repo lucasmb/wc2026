@@ -106,6 +106,53 @@
           :prediction="predictionsMap[match.id]"
           @update="handlePredictionUpdate(match.id, $event)"
         />
+        <!-- Collapsible predictions for locked/live/finished matches -->
+        <q-card
+          v-if="activeGroupId && isMatchLockedOrActive(match) && matchPredictions[match.id]?.length"
+          flat
+          bordered
+          class="q-mt-xs rounded-borders"
+          :class="$q.dark.isActive ? 'bg-grey-10' : 'bg-grey-1'"
+        >
+          <q-expansion-item
+            dense
+            :label="`Predicciones del grupo (${matchPredictions[match.id]?.length ?? 0})`"
+            :header-class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'"
+          >
+            <q-separator />
+            <q-list dense>
+              <q-item
+                v-for="pred in matchPredictions[match.id]"
+                :key="pred.id"
+                class="q-py-xs"
+              >
+                <q-item-section avatar>
+                  <q-avatar size="28px" color="primary" text-color="white">
+                    <img v-if="pred.userAvatar" :src="pred.userAvatar" :alt="pred.userName" />
+                    <span v-else class="text-caption">{{ pred.userName.charAt(0).toUpperCase() }}</span>
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-caption text-weight-medium">{{ pred.userName }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <div class="row items-center q-gutter-x-sm">
+                    <span class="text-caption text-weight-bold">
+                      {{ pred.predicted_home }} - {{ pred.predicted_away }}
+                    </span>
+                    <q-badge
+                      v-if="match.status === 'finished'"
+                      :color="pred.points_awarded > 0 ? 'positive' : 'grey'"
+                      dense
+                    >
+                      {{ pred.points_awarded }} pts
+                    </q-badge>
+                  </div>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+        </q-card>
       </div>
 
       <!-- Unified Action Block at the bottom of the scroll flow (Mobile-safe, non-overlapping) -->
@@ -154,7 +201,16 @@ import { Notify } from 'quasar';
 import { useAuthStore } from '@/stores/auth';
 import { useTournamentStore } from '@/stores/tournament';
 import PredictionForm from '@/components/match/PredictionForm.vue';
-import type { PredictionGroup, Prediction } from '@/types';
+import type { PredictionGroup, Prediction, Match } from '@/types';
+
+interface MatchPrediction {
+  id: string;
+  predicted_home: number;
+  predicted_away: number;
+  points_awarded: number;
+  userName: string;
+  userAvatar: string;
+}
 
 const tournamentStore = useTournamentStore();
 const authStore = useAuthStore();
@@ -169,6 +225,7 @@ const activeGroupId = ref<string>('');
 const myGroups = ref<PredictionGroup[]>([]);
 
 const predictionsMap = ref<Record<string, Prediction>>({});
+const matchPredictions = ref<Record<string, MatchPrediction[]>>({});
 const currentScores = ref<Record<string, { predicted_home: number; predicted_away: number }>>({});
 const dirtyMatches = ref<Record<string, boolean>>({});
 
@@ -245,6 +302,13 @@ function formatLocalTime(isoString: string) {
   }).format(new Date(isoString));
 }
 
+function isMatchLockedOrActive(match: Match): boolean {
+  if (match.status === 'finished' || match.status === 'live') return true;
+  if (!match.kickoff) return false;
+  const isoString = match.kickoff.replace(' ', 'T');
+  return new Date(isoString).getTime() <= Date.now();
+}
+
 function prevGroup() {
   const idx = groupStages.indexOf(selectedGroupStage.value);
   if (idx > 0) {
@@ -311,10 +375,73 @@ async function fetchPredictions() {
     predictionsMap.value = map;
     currentScores.value = {};
     dirtyMatches.value = {};
+
+    await fetchGroupPredictions();
   } catch (err: unknown) {
     console.error('Failed fetching predictions batch:', err);
   } finally {
     loadingPredictions.value = false;
+  }
+}
+
+async function fetchGroupPredictions() {
+  if (!activeGroupId.value) return;
+  try {
+    const members = await pb.collection('group_members_id').getFullList({
+      filter: `prediction_group = "${activeGroupId.value}"`,
+      expand: 'user',
+    });
+
+    const userMap = new Map<string, { username: string; avatarUrl: string }>();
+    members.forEach((m) => {
+      const user = m.expand?.user as { id: string; username: string; avatar_url?: string; avatar?: string } | undefined;
+      if (user) {
+        userMap.set(user.id, {
+          username: user.username || 'Unknown',
+          avatarUrl: user.avatar_url || user.avatar || '',
+        });
+      }
+    });
+
+    const allPredictions = await pb.collection('predictions_id').getFullList({
+      filter: `prediction_group = "${activeGroupId.value}"`,
+    });
+
+    const grouped: Record<string, MatchPrediction[]> = {};
+    allPredictions.forEach((p) => {
+      let matchId = '';
+      if (typeof p.match === 'string') {
+        matchId = p.match;
+      } else if (Array.isArray(p.match) && p.match.length > 0) {
+        matchId = String(p.match[0]);
+      } else if (p.match && typeof p.match === 'object') {
+        const matchObj = p.match as { id?: string };
+        matchId = String(matchObj.id || '');
+      }
+
+      if (matchId) {
+        const userInfo = userMap.get(p.user as string) || { username: 'Unknown', avatarUrl: '' };
+        if (!grouped[matchId]) {
+          grouped[matchId] = [];
+        }
+        grouped[matchId]!.push({
+          id: p.id,
+          predicted_home: p.predicted_home as number,
+          predicted_away: p.predicted_away as number,
+          points_awarded: (p.points_awarded as number) || 0,
+          userName: userInfo.username,
+          userAvatar: userInfo.avatarUrl,
+        });
+      }
+    });
+
+    Object.values(grouped).forEach((preds) => {
+      preds.sort((a, b) => b.points_awarded - a.points_awarded);
+    });
+
+    matchPredictions.value = grouped;
+  } catch (err: unknown) {
+    console.error('Failed fetching group predictions:', err);
   }
 }
 

@@ -165,7 +165,7 @@ func recalculateGroupLeaderboard(txApp core.App, groupID string) error {
 	currentRank := 1
 	for idx, s := range scores {
 		if idx > 0 && s.Points < scores[idx-1].Points {
-			currentRank = idx + 1
+			currentRank++
 		}
 		s.Record.Set("total_points", s.Points)
 		s.Record.Set("rank", currentRank)
