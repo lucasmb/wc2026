@@ -195,7 +195,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { pb } from '@/boot/pocketbase';
+import { pb, PB_URL } from '@/boot/pocketbase';
 import { Notify } from 'quasar';
 
 import { useAuthStore } from '@/stores/auth';
@@ -387,50 +387,32 @@ async function fetchPredictions() {
 async function fetchGroupPredictions() {
   if (!activeGroupId.value) return;
   try {
-    const members = await pb.collection('group_members_id').getFullList({
-      filter: `prediction_group = "${activeGroupId.value}"`,
-      expand: 'user',
+    const response = await fetch(`${PB_URL}/api/wc/match-predictions/${activeGroupId.value}`, {
+      headers: {
+        Authorization: `Bearer ${pb.authStore.token}`,
+      },
     });
 
-    const userMap = new Map<string, { username: string; avatarUrl: string }>();
-    members.forEach((m) => {
-      const user = m.expand?.user as { id: string; username: string; avatar_url?: string; avatar?: string } | undefined;
-      if (user) {
-        userMap.set(user.id, {
-          username: user.username || 'Unknown',
-          avatarUrl: user.avatar_url || user.avatar || '',
-        });
-      }
-    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-    const allPredictions = await pb.collection('predictions_id').getFullList({
-      filter: `prediction_group = "${activeGroupId.value}"`,
-    });
+    const allPredictions = await response.json();
 
     const grouped: Record<string, MatchPrediction[]> = {};
-    allPredictions.forEach((p) => {
-      let matchId = '';
-      if (typeof p.match === 'string') {
-        matchId = p.match;
-      } else if (Array.isArray(p.match) && p.match.length > 0) {
-        matchId = String(p.match[0]);
-      } else if (p.match && typeof p.match === 'object') {
-        const matchObj = p.match as { id?: string };
-        matchId = String(matchObj.id || '');
-      }
-
+    allPredictions.forEach((p: { match: string; id: string; predicted_home: number; predicted_away: number; points_awarded: number; userName: string; userAvatarUrl: string; userAvatar: string }) => {
+      const matchId = p.match;
       if (matchId) {
-        const userInfo = userMap.get(p.user as string) || { username: 'Unknown', avatarUrl: '' };
         if (!grouped[matchId]) {
           grouped[matchId] = [];
         }
-        grouped[matchId]!.push({
+        grouped[matchId].push({
           id: p.id,
-          predicted_home: p.predicted_home as number,
-          predicted_away: p.predicted_away as number,
-          points_awarded: (p.points_awarded as number) || 0,
-          userName: userInfo.username,
-          userAvatar: userInfo.avatarUrl,
+          predicted_home: p.predicted_home,
+          predicted_away: p.predicted_away,
+          points_awarded: p.points_awarded || 0,
+          userName: p.userName,
+          userAvatar: p.userAvatarUrl || p.userAvatar || '',
         });
       }
     });
