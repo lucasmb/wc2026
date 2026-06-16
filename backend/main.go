@@ -98,6 +98,7 @@ func main() {
 		routes.RegisterLeaderboard(app, se)
 		routes.RegisterSync(app, se)
 		routes.RegisterExternalAPI(app, se)
+		routes.RegisterMatchPredictions(app, se)
 
 		return se.Next()
 	})
