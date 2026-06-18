@@ -15,7 +15,7 @@
       >
         <q-card-section class="text-center">
           <q-avatar size="80px" color="primary" text-color="white" class="q-mb-md">
-            <img v-if="avatarUrl || user?.avatar" :src="avatarUrl || user?.avatar" alt="Avatar" />
+            <img v-if="avatarUrl || (user?.id && user?.avatar)" :src="avatarUrl || getFileUrl(user!.id, user!.avatar)" alt="Avatar" />
             <span v-else>{{ username.charAt(0).toUpperCase() }}</span>
           </q-avatar>
           <div class="text-h6 text-weight-bold text-primary">Edicion de Perfil</div>
@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { Notify } from 'quasar';
-import { pb } from '@/boot/pocketbase';
+import { pb, getFileUrl } from '@/boot/pocketbase';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();

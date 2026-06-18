@@ -106,6 +106,22 @@
           :prediction="predictionsMap[match.id]"
           @update="handlePredictionUpdate(match.id, $event)"
         />
+        <!-- Finished game score display -->
+        <div
+          v-if="match.status === 'finished'"
+          class="q-mt-xs q-pa-sm rounded-borders text-center"
+          :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-2'"
+        >
+          <div class="text-caption text-weight-bold q-mb-xs">Resultado Final</div>
+          <div class="row items-center justify-center q-gutter-x-md">
+            <span class="text-weight-bold">{{ match.expand?.home_team?.name }}</span>
+            <span class="text-h6 text-weight-bolder text-primary">
+              {{ match.score_home }} - {{ match.score_away }}
+            </span>
+            <span class="text-weight-bold">{{ match.expand?.away_team?.name }}</span>
+          </div>
+          <q-badge color="grey-7" class="q-mt-xs">Finalizado</q-badge>
+        </div>
         <!-- Collapsible predictions for locked/live/finished matches -->
         <q-card
           v-if="activeGroupId && isMatchLockedOrActive(match) && matchPredictions[match.id]?.length"
@@ -195,7 +211,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { pb, PB_URL } from '@/boot/pocketbase';
+import { pb, PB_URL, getFileUrl } from '@/boot/pocketbase';
 import { Notify } from 'quasar';
 
 import { useAuthStore } from '@/stores/auth';
@@ -205,6 +221,7 @@ import type { PredictionGroup, Prediction, Match } from '@/types';
 
 interface MatchPrediction {
   id: string;
+  userId: string;
   predicted_home: number;
   predicted_away: number;
   points_awarded: number;
@@ -400,7 +417,7 @@ async function fetchGroupPredictions() {
     const allPredictions = await response.json();
 
     const grouped: Record<string, MatchPrediction[]> = {};
-    allPredictions.forEach((p: { match: string; id: string; predicted_home: number; predicted_away: number; points_awarded: number; userName: string; userAvatarUrl: string; userAvatar: string }) => {
+    allPredictions.forEach((p: { match: string; id: string; userId: string; predicted_home: number; predicted_away: number; points_awarded: number; userName: string; userAvatarUrl: string; userAvatar: string }) => {
       const matchId = p.match;
       if (matchId) {
         if (!grouped[matchId]) {
@@ -408,11 +425,12 @@ async function fetchGroupPredictions() {
         }
         grouped[matchId].push({
           id: p.id,
+          userId: p.userId,
           predicted_home: p.predicted_home,
           predicted_away: p.predicted_away,
           points_awarded: p.points_awarded || 0,
           userName: p.userName,
-          userAvatar: p.userAvatarUrl || p.userAvatar || '',
+          userAvatar: p.userAvatarUrl || getFileUrl(p.userId, p.userAvatar) || '',
         });
       }
     });

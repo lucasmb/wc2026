@@ -9,4 +9,9 @@ export default boot(({ app }) => {
   app.config.globalProperties.$pb = pb;
 });
 
+export function getFileUrl(recordId: string, filename: string): string {
+  if (!filename) return '';
+  return `${PB_URL}/api/files/_pb_users_auth_/${recordId}/${filename}`;
+}
+
 export { pb, PB_URL };

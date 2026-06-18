@@ -14,6 +14,7 @@ type MatchPredictionRow struct {
 	PredictedHome  int    `json:"predicted_home"`
 	PredictedAway  int    `json:"predicted_away"`
 	PointsAwarded  int    `json:"points_awarded"`
+	UserID         string `json:"userId"`
 	UserName       string `json:"userName"`
 	UserAvatarUrl  string `json:"userAvatarUrl"`
 	UserAvatar     string `json:"userAvatar"`
@@ -82,6 +83,7 @@ func RegisterMatchPredictions(app core.App, se *core.ServeEvent) {
 				PredictedHome: p.GetInt("predicted_home"),
 				PredictedAway: p.GetInt("predicted_away"),
 				PointsAwarded: p.GetInt("points_awarded"),
+				UserID:        userID,
 				UserName:      userName,
 				UserAvatarUrl: userAvatarUrl,
 				UserAvatar:    userAvatar,
