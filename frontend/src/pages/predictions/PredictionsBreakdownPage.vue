@@ -69,7 +69,7 @@
                     :text-color="user.totalPoints > 0 && user.rank <= 3 ? 'black' : 'white'"
                     class="shadow-1"
                   >
-                    <img v-if="user.avatarUrl || user.avatar" :src="user.avatarUrl || user.avatar" :alt="user.username" />
+                    <img v-if="user.avatarUrl || user.avatar" :src="user.avatarUrl || getFileUrl(user.userId, user.avatar)" :alt="user.username" />
                     <span v-else>{{ user.username.charAt(0).toUpperCase() }}</span>
                   </q-avatar>
                   <div>
@@ -173,7 +173,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { pb, PB_URL } from '@/boot/pocketbase';
+import { pb, PB_URL, getFileUrl } from '@/boot/pocketbase';
 import { useAuthStore } from '@/stores/auth';
 import { useTournamentStore } from '@/stores/tournament';
 import type { Match, PredictionGroup, Prediction, LeaderboardUser } from '@/types';
