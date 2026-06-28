@@ -246,8 +246,7 @@ const matchPredictions = ref<Record<string, MatchPrediction[]>>({});
 const currentScores = ref<Record<string, { predicted_home: number; predicted_away: number }>>({});
 const dirtyMatches = ref<Record<string, boolean>>({});
 
-// Expanded to include both Groups A-L and the Knockout Single-Elimination phases
-const groupStageOptions = [
+const allPhaseOptions = [
   { label: 'Group A', value: 'A' },
   { label: 'Group B', value: 'B' },
   { label: 'Group C', value: 'C' },
@@ -260,7 +259,6 @@ const groupStageOptions = [
   { label: 'Group J', value: 'J' },
   { label: 'Group K', value: 'K' },
   { label: 'Group L', value: 'L' },
-  // KNOCKOUT PHASES
   { label: 'Round of 32', value: 'r32' },
   { label: 'Round of 16', value: 'r16' },
   { label: 'Quarter-Finals', value: 'qf' },
@@ -268,28 +266,34 @@ const groupStageOptions = [
   { label: 'Finals', value: 'final' },
 ];
 
-const groupStages = [
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G',
-  'H',
-  'I',
-  'J',
-  'K',
-  'L',
-  'r32',
-  'r16',
-  'qf',
-  'sf',
-  'final',
-];
+function getMatchesForPhase(phase: string) {
+  const isKnockout = ['r32', 'r16', 'qf', 'sf', 'final'].includes(phase);
+  return tournamentStore.matches.filter((m) => {
+    if (isKnockout) return m.phase === phase;
+    return m.phase === 'group' && m.group_code === phase;
+  });
+}
 
-const isFirstGroup = computed(() => selectedGroupStage.value === 'A');
-const isLastGroup = computed(() => selectedGroupStage.value === 'final');
+function isPhaseFinished(phase: string) {
+  const matches = getMatchesForPhase(phase);
+  if (matches.length === 0) return true;
+  return matches.every((m) => m.status === 'finished');
+}
+
+const groupStageOptions = computed(() => {
+  return allPhaseOptions.filter((option) => {
+    const matches = getMatchesForPhase(option.value);
+    if (matches.length === 0) return false;
+    return !isPhaseFinished(option.value);
+  });
+});
+
+const groupStages = computed(() => {
+  return groupStageOptions.value.map((o) => o.value);
+});
+
+const isFirstGroup = computed(() => groupStages.value[0] === selectedGroupStage.value);
+const isLastGroup = computed(() => groupStages.value[groupStages.value.length - 1] === selectedGroupStage.value);
 
 // Automatically disables the group save action if all matches are locked or finished
 const isSaveDisabled = computed(() => {
@@ -327,9 +331,9 @@ function isMatchLockedOrActive(match: Match): boolean {
 }
 
 function prevGroup() {
-  const idx = groupStages.indexOf(selectedGroupStage.value);
+  const idx = groupStages.value.indexOf(selectedGroupStage.value);
   if (idx > 0) {
-    const prevGroupVal = groupStages[idx - 1];
+    const prevGroupVal = groupStages.value[idx - 1];
     if (prevGroupVal) {
       selectedGroupStage.value = prevGroupVal;
     }
@@ -337,9 +341,9 @@ function prevGroup() {
 }
 
 function nextGroup() {
-  const idx = groupStages.indexOf(selectedGroupStage.value);
-  if (idx < groupStages.length - 1) {
-    const nextGroupVal = groupStages[idx + 1];
+  const idx = groupStages.value.indexOf(selectedGroupStage.value);
+  if (idx < groupStages.value.length - 1) {
+    const nextGroupVal = groupStages.value[idx + 1];
     if (nextGroupVal) {
       selectedGroupStage.value = nextGroupVal;
     }
@@ -547,6 +551,18 @@ watch(
       await fetchPredictions();
     }
   },
+);
+
+watch(
+  () => groupStageOptions.value,
+  (options) => {
+    if (options.length === 0) return;
+    const exists = options.some((o) => o.value === selectedGroupStage.value);
+    if (!exists) {
+      selectedGroupStage.value = options[0]?.value || 'A';
+    }
+  },
+  { deep: true },
 );
 
 onMounted(async () => {
