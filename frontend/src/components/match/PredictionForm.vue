@@ -121,6 +121,7 @@ const props = defineProps<{
   match: Match;
   groupId: string;
   prediction: Prediction | undefined;
+  predictionsAllowed?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -136,6 +137,7 @@ const form = ref({
 });
 
 const isLocked = computed(() => {
+  if (!props.predictionsAllowed) return true;
   if (props.match.status === 'finished') return true;
   if (!props.match.kickoff) return false;
   const isoString = props.match.kickoff.replace(' ', 'T');

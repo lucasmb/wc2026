@@ -104,6 +104,7 @@
           :match="match"
           :groupId="activeGroupId"
           :prediction="predictionsMap[match.id]"
+          :predictions-allowed="['sf', 'final', 'third'].includes(match.phase)"
           @update="handlePredictionUpdate(match.id, $event)"
         />
         <!-- Finished game score display -->
@@ -263,11 +264,12 @@ const allPhaseOptions = [
   { label: 'Round of 16', value: 'r16' },
   { label: 'Quarter-Finals', value: 'qf' },
   { label: 'Semi-Finals', value: 'sf' },
+  { label: 'Third Place', value: 'third' },
   { label: 'Finals', value: 'final' },
 ];
 
 function getMatchesForPhase(phase: string) {
-  const isKnockout = ['r32', 'r16', 'qf', 'sf', 'final'].includes(phase);
+  const isKnockout = ['r32', 'r16', 'qf', 'sf', 'third', 'final'].includes(phase);
   return tournamentStore.matches.filter((m) => {
     if (isKnockout) return m.phase === phase;
     return m.phase === 'group' && m.group_code === phase;
@@ -309,7 +311,7 @@ const isSaveDisabled = computed(() => {
 const filteredMatches = computed(() => {
   const selected = selectedGroupStage.value;
   // If a knockout stage is selected, match by the 'phase' attribute directly
-  if (['r32', 'r16', 'qf', 'sf', 'final'].includes(selected)) {
+  if (['r32', 'r16', 'qf', 'sf', 'third', 'final'].includes(selected)) {
     return tournamentStore.matches.filter((m) => m.phase === selected);
   }
   // Otherwise, match group stage letters
